@@ -131,19 +131,19 @@ class SAMFormer:
     def predict(self, x, batch_size=256):
         return self.forecast(x, batch_size=batch_size)
 
-    
-    def extract_matrices(model, x):
+
+    def extract_matrices(self, x):
         # Perform forward pass to extract Q, K, V
         with torch.no_grad():
-            if model.use_revin:
-                x_norm = model.revin(x.transpose(1, 2), mode='norm').transpose(1, 2)
+            if self.use_revin:
+                x_norm = self.network.revin(x.transpose(1, 2), mode='norm').transpose(1, 2)
             else:
                 x_norm = x
             
             # Queries, Keys, Values
-            queries = model.compute_queries(x_norm)  # (n, D, hid_dim)
-            keys = model.compute_keys(x_norm)        # (n, D, hid_dim)
-            values = model.compute_values(x_norm)    # (n, D, L)
+            queries = self.network.compute_queries(x_norm)  # (n, D, hid_dim)
+            keys = self.network.compute_keys(x_norm)        # (n, D, hid_dim)
+            values = self.network.compute_values(x_norm)    # (n, D, L)
             
             # Attention matrix Q*K^T
             if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
@@ -153,43 +153,43 @@ class SAMFormer:
             
             # X after attention projection
             out = x_norm + att_score  # Residual connection
-            out_proj = model.linear_forecaster(out)
+            out_proj = self.network.linear_forecaster(out)
             
         return x, queries, keys, values, att_score, out_proj
 
-    def extract_weight_matrices(model):
-        W_Q = model.compute_queries.weight.detach().cpu().numpy()  # (512, 16)
-        W_K = model.compute_keys.weight.detach().cpu().numpy()     # (512, 16)
-        W_V = model.compute_values.weight.detach().cpu().numpy()   # (512, 512)
-        W_O = model.linear_forecaster.weight.detach().cpu().numpy() # (512, 96)
+    def extract_weight_matrices(self):
+        W_Q = self.network.compute_queries.weight.detach().cpu().numpy()  # (512, 16)
+        W_K = self.network.compute_keys.weight.detach().cpu().numpy()     # (512, 16)
+        W_V = self.network.compute_values.weight.detach().cpu().numpy()   # (512, 512)
+        W_O = self.network.linear_forecaster.weight.detach().cpu().numpy() # (512, 96)
         return W_Q, W_K, W_V, W_O
 
-    def plot_heatmap(matrix, title):
+    def plot_heatmap(self, matrix, title):
         plt.figure(figsize=(10, 6))
         sns.heatmap(matrix, cmap="viridis")
         plt.title(title)
         plt.show()
 
-    def generate_heatmaps(model, x):
-        x, queries, keys, values, att_score, out_proj = extract_matrices(model, x)
+    def generate_heatmaps(self, x):
+        x, queries, keys, values, att_score, out_proj = self.extract_matrices(x)
         
         # Plot input X
-        plot_heatmap(x[0].cpu().numpy(), "Input Matrix (X) for 1 Batch")
+        self.plot_heatmap(x[0].cpu().numpy(), "Input Matrix (X) for 1 Batch")
         
         # Plot Q, K, V
-        plot_heatmap(queries[0].cpu().numpy(), "Query Matrix (Q) for 1 Batch")
-        plot_heatmap(keys[0].cpu().numpy(), "Key Matrix (K) for 1 Batch")
-        plot_heatmap(values[0].cpu().numpy(), "Value Matrix (V) for 1 Batch")
+        self.plot_heatmap(queries[0].cpu().numpy(), "Query Matrix (Q) for 1 Batch")
+        self.plot_heatmap(keys[0].cpu().numpy(), "Key Matrix (K) for 1 Batch")
+        self.plot_heatmap(values[0].cpu().numpy(), "Value Matrix (V) for 1 Batch")
         
         # Plot Attention Matrix (Q*K^T)
-        plot_heatmap(att_score[0].cpu().numpy(), "Attention Matrix (Q*K^T) for 1 Batch")
+        self.plot_heatmap(att_score[0].cpu().numpy(), "Attention Matrix (Q*K^T) for 1 Batch")
         
         # Plot X after attention projection
-        plot_heatmap(out_proj[0].cpu().numpy(), "X after Attention Projection for 1 Batch")
+        self.plot_heatmap(out_proj[0].cpu().numpy(), "X after Attention Projection for 1 Batch")
         
         # Extract and plot weight matrices
-        W_Q, W_K, W_V, W_O = extract_weight_matrices(model)
-        plot_heatmap(W_Q, "Projection Matrix W_Q")
-        plot_heatmap(W_K, "Projection Matrix W_K")
-        plot_heatmap(W_V, "Projection Matrix W_V")
-        plot_heatmap(W_O, "Projection Matrix W_O")
+        W_Q, W_K, W_V, W_O = self.extract_weight_matrices()
+        self.plot_heatmap(W_Q, "Projection Matrix W_Q")
+        self.plot_heatmap(W_K, "Projection Matrix W_K")
+        self.plot_heatmap(W_V, "Projection Matrix W_V")
+        self.plot_heatmap(W_O, "Projection Matrix W_O")
