@@ -11,6 +11,9 @@ from .utils.dataset import LabeledDataset
 from .utils.revin import RevIN
 from .utils.sam import SAM
 
+# Add these imports for plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class SAMFormerArchitecture(nn.Module):
     def __init__(self, num_channels, seq_len, hid_dim, pred_horizon, use_revin=True):
@@ -130,7 +133,6 @@ class SAMFormer:
 
     def predict(self, x, batch_size=256):
         return self.forecast(x, batch_size=batch_size)
-
 
     def extract_matrices(self, x):
         # Perform forward pass to extract Q, K, V
