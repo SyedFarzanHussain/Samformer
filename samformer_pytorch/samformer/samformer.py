@@ -187,7 +187,7 @@ class SAMFormer:
         self.plot_heatmap(att_score[0].cpu().numpy(), "Attention Score (Q*K^T)*V for 1 Batch")
         
         # Plot X after attention projection
-        self.plot_heatmap(out_proj[0].cpu().numpy(), "X after Attention Projection for 1 Batch")
+        self.plot_heatmap(out_proj[0].cpu().numpy(), "Output Projection for 1 Batch")
         
         # Extract and plot weight matrices
         W_Q, W_K, W_V, W_O = self.extract_weight_matrices()
