@@ -174,6 +174,9 @@ class SAMFormer:
 
     def generate_heatmaps(self, x):
         x, queries, keys, values, att_score, out_proj = self.extract_matrices(x)
+
+        attention_matrix = torch.bmm(queries, keys.transpose(1, 2)) / np.sqrt(queries.shape[-1])
+        attention_weights = nn.functional.softmax(attention_matrix, dim=-1)
         
         # Plot input X
         self.plot_heatmap(x[0].cpu().numpy(), "Input Matrix (X) for 1 Batch")
@@ -184,6 +187,8 @@ class SAMFormer:
         self.plot_heatmap(values[0].cpu().numpy(), "Value Matrix (V) for 1 Batch")
         
         # Plot Attention Matrix (Q*K^T)
+        self.plot_heatmap(attention_weights[0].cpu().numpy(), "Attention Matrix (Q * K^T) for 1 Batch")
+        #Plot Attention Matrix (Q*K^T)*V
         self.plot_heatmap(att_score[0].cpu().numpy(), "Attention Score (Q*K^T)*V for 1 Batch")
         
         # Plot X after attention projection
